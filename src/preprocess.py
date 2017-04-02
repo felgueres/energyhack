@@ -218,7 +218,7 @@ class mdata (object):
         self.created_features.append(new_col)
         revenue_generating_workers = ['usuact_10ab_empyr_t', 'usuact_10ab_govemp_m','usuact_10ab_ownacc_t', 'usuact_10ab_priemp_t']
         self.census['active_workers'] = self.census.loc[:, revenue_generating_workers].copy().sum(axis =1)
-        self.census[new_col] = self.census.active_workers * self.
+        self.census[new_col] = self.census.active_workers * self.monthly_wages.set_index('groups').loc['All','mean'] * 12 / self.census['pop_t'] # Wages * Workers / Total People Remember its monthly /
 
     def _impact_features(self):
         '''
