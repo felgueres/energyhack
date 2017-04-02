@@ -282,3 +282,5 @@ if __name__ == '__main__':
 
     a = mdata()
     a.fit()
+    a.census.loc[:, a.created_features].to_pickle('myanmar_data.pickle')
+    a.census.loc[:, a.created_features].to_csv('myanmar_data.csv')
