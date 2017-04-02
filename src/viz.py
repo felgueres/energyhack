@@ -14,6 +14,7 @@ from bokeh.sampledata.movies_data import movie_path
 
 data = pd.read_pickle('myanmar_data.pickle')
 data.dropna(inplace = True)
+print data.shape
 
 #FORMATTING
 # movies["color"] = np.where(movies["Oscars"] > 0, "orange", "grey")
@@ -49,13 +50,12 @@ axis_map = {
 desc = Div(text=open(join(dirname(__file__), "description.html")).read(), width=800)
 
 # Create Input controls
-min_market_size_kW = Slider(title="Minimum market size in KW", value=0, start=0, end=3000000, step=10000)
-min_income_per_capita = Slider(title="Minimum Income per Capita (K)", start=0, end=950, value=0, step=50)
-min_market_size_USD = Slider(title="Minimum Market size in USD", start=0, end=800, value=0, step=10)
-gov_revenue = Slider(title="Government Revenue", start=0, end=175000, value=0, step=10000)
-access_to_comm = Slider(title="Access to Mobile Phones ", start=0, end=1, value=0, step=0.01)
+min_market_size_kW = Slider(title="Minimum market size in KW", value=data.underserved_mkt_size_kW.mean(), start=0, end=450, step=10)
+min_income_per_capita = Slider(title="Minimum Income per Capita (K)", start=0, end=950, value=data.income_per_capita_yr.mean(), step=50)
+min_market_size_USD = Slider(title="Minimum Market size in USD", start=0, end=2700000, value=data.underserved_mkt_size_USD.mean(), step=10000)
+gov_revenue = Slider(title="Government Revenue", start=0, end=175000, value=data.gov_revenue.mean(), step=10000)
+access_to_comm = Slider(title="Access to Mobile Phones ", start=0, end=1, value=data.mobile_phone_per_HH.mean(), step=0.01)
 
-#
 # reviews = Slider(title="Minimum number of reviews", value=80, start=10, end=300, step=10)
 # min_year = Slider(title="Year released", start=1940, end=2014, value=1970, step=1)
 # max_year = Slider(title="End Year released", start=1940, end=2014, value=2014, step=1)
@@ -101,12 +101,12 @@ p.circle(x="x", y="y", source=source, size=7, line_color=None)
 def select():
 
     selected = data.ix[
-                       (data.underserved_mkt_size_kW >= min_market_size_kW) &
-                       (data.income_per_capita_yr >= min_income_per_capita) &
-                       (data.underserved_mkt_size_USD >= min_market_size_USD) &
-                       (data.gov_revenue >= gov_revenue)&
-                       (data.mobile_phone_per_HH >= access_to_comm)
-                        ]
+                       (data.underserved_mkt_size_kW >= min_market_size_kW.value) &
+                       (data.underserved_mkt_size_USD >= min_market_size_USD.value)&
+                       (data.income_per_capita_yr >= min_income_per_capita.value) &
+                       (data.gov_revenue >= gov_revenue.value)&
+                       (data.mobile_phone_per_HH >= access_to_comm.value)
+                        ].copy()
 
     return selected
 
