@@ -19,6 +19,7 @@ class mdata (object):
         self.names_dict = {}
         self.main_cols = None
         self.created_features = []
+        self.density = None
 
     '''
     -------------------------------LOAD-DATA------------------------------------
@@ -89,6 +90,12 @@ class mdata (object):
         self.wb_plan = pd.read_csv('../data/03_transmission_lines_and_infrastructure/03_geospatial_least_cost_national_electrification_plan.csv')
         #merge to main
         self.census.merge(self.wb_plan.set_index('Township_c'), left_index = True, right_index = True, how ='left')
+
+    def _import_density(self):
+        '''
+        Import Density File
+        '''
+        self.density = pd.read_csv('../data/00_population/07_Area-and-Populatin-density-by-State-and-Region.csv')
 
     def _featurize(self):
         '''
@@ -175,10 +182,11 @@ class mdata (object):
         #Closest_Road #TODO: Import from calculated one.
 
 
-        #Density #TODO: See if calculated.
+        #Density people per km2
+        new_col = 'density_per_km2'
+        self.census.merge(self.density.set_index('Pcode').rename(columns = {'den_2014': new_col}), left_index=True, right_index=True, how = 'left')
 
-
-        #Estimated_Revenue_Per_Capita
+        #Estimated_Revenue_Per_Capita #TODO: Calculate
 
 
     def _impact_features(self):
@@ -200,6 +208,11 @@ class mdata (object):
         self.created_features.append(new_col)
         self.census[new_col] = float(system_cost) / impact['Mean_household_size']
 
+    def _solar_features(self):
+        '''
+        Create solar features.
+        '''
+
     def _add_columns(self):
         '''
         Use this function to other relevant columns needed from the census df.
@@ -208,14 +221,14 @@ class mdata (object):
         population = ['illit_15ab_t', 'pop_t'] #Literacy, Total Population
         revenue_generating_workers = ['usuact_10ab_empyr_t', 'usuact_10ab_govemp_m','usuact_10ab_ownacc_t', 'usuact_10ab_priemp_t']
 
-
     def fit(self):
         '''
-        Fit all preprocess.
+        Fit to datasets and fit features.
         '''
         self._build_census_file()
         self._import_WB_plan()
         self._import_keys()
+        self._import_density()
         self._featurize()
 
 if __name__ == '__main__':
