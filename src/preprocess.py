@@ -245,11 +245,6 @@ class mdata (object):
         '''
         pass
 
-    def _add_columns(self):
-        '''
-        Use this function to other relevant columns needed from the census df.
-        '''
-
     def _importer(self):
         '''
         Helper to import all files.
