@@ -6,6 +6,7 @@ import os
 import geopandas as gpd
 import itertools
 from bokeh.palettes import Dark2_5 as palette
+from sklearn import preprocessing
 
 class mdata (object):
     '''
@@ -289,12 +290,25 @@ class mdata (object):
 
         colors_dict = {}
 
+        states = self.census.st_name.unique().tolist()
+
         for state, color in itertools.izip(states, colors):
             colors_dict[state] = color
 
         new_col = 'color'
         self.created_features.append(new_col)
         self.census[new_col] = self.census.st_name.apply(lambda x : colors_dict[x])
+
+
+    def _scaler(self):
+        '''
+        Create volume for underserved_population.
+        '''
+        new_col = 'blob_size'
+        self.created_features.append(new_col)
+        X = self.census.underserved_population.reshape((self.census.shape[0],1))
+        min_max_scaler = preprocessing.MinMaxScaler(feature_range=(1,20))
+        self.census[new_col] = min_max_scaler.fit_transform(X)
 
     def _format_cols(self):
         '''
@@ -312,6 +326,8 @@ class mdata (object):
         self._get_coordenates()
         self._add_columns()
         self._create_colors()
+        self._scaler()
+        self._format_cols()
 
 if __name__ == '__main__':
 

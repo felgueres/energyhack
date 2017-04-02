@@ -10,11 +10,11 @@ from bokeh.models import ColumnDataSource, HoverTool, Div
 from bokeh.models.widgets import Slider, Select, TextInput
 from bokeh.io import curdoc
 from bokeh.sampledata.movies_data import movie_path
-
+from bokeh.palettes import Dark2_5 as palette
+import itertools
 
 data = pd.read_pickle('myanmar_data.pickle')
 data.dropna(inplace = True)
-print data.shape
 
 #FORMATTING
 # movies["color"] = np.where(movies["Oscars"] > 0, "orange", "grey")
@@ -50,11 +50,11 @@ axis_map = {
 desc = Div(text=open(join(dirname(__file__), "description.html")).read(), width=800)
 
 # Create Input controls
-min_market_size_kW = Slider(title="Minimum market size in KW", value=data.underserved_mkt_size_kW.mean(), start=0, end=450, step=10)
+min_market_size_kW = Slider(title="Minimum market size (KW)", value=data.underserved_mkt_size_kW.mean(), start=0, end=450, step=10)
 min_income_per_capita = Slider(title="Minimum Income per Capita (K)", start=0, end=950, value=data.income_per_capita_yr.mean(), step=50)
-min_market_size_USD = Slider(title="Minimum Market size in USD", start=0, end=2700000, value=data.underserved_mkt_size_USD.mean(), step=10000)
-gov_revenue = Slider(title="Government Revenue", start=0, end=175000, value=data.gov_revenue.mean(), step=10000)
-access_to_comm = Slider(title="Access to Mobile Phones ", start=0, end=1, value=data.mobile_phone_per_HH.mean(), step=0.01)
+min_market_size_USD = Slider(title="Minimum Market size (USD)", start=0, end=2700000, value=data.underserved_mkt_size_USD.mean(), step=10000)
+gov_revenue = Slider(title="Government Revenue (K)", start=0, end=175000, value=data.gov_revenue.mean(), step=10000)
+access_to_comm = Slider(title="Communication Access (Phones/Household)", start=0, end=1, value=data.mobile_phone_per_HH.mean(), step=0.01)
 
 # reviews = Slider(title="Minimum number of reviews", value=80, start=10, end=300, step=10)
 # min_year = Slider(title="Year released", start=1940, end=2014, value=1970, step=1)
@@ -84,19 +84,25 @@ y_axis = Select(title="Y Axis", options=sorted(axis_map.keys()), value="Income p
 source = ColumnDataSource(data=dict(x=[],
                                     y=[],
                                     # color=[],
+                                    State = [],
+                                    District =[],
                                     Township=[],
                                     Number_of_HH_wo_Electricity=[],
-                                    Market_Size=[]))
+                                    Market_Size_USD=[],
+                                    color=[],
+                                    blob_size=[]))
 hover = HoverTool(tooltips=[
-    ("Title", "@Township"),
+    ("State", "@State"),
+    ("District", "@District"),
+    ("Township", "@Township"),
     ("# Unelectrified Households", "@Number_of_HH_wo_Electricity"),
-    ("$", "@Market_Size")
+    ("Market Size (USD)", "@Market_Size_USD")
 ])
 
 p = figure(plot_height=600, plot_width=700, title="", toolbar_location=None, tools=[hover])
-p.circle(x="x", y="y", source=source, size=7, line_color=None)
+# p.circle(x="x", y="y", source=source, size=7, line_color=None)
 
-# p.circle(x="x", y="y", source=source, size=7, color="color", line_color=None, fill_alpha="alpha")
+p.circle(x="x", y="y", source=source, size='blob_size', color="color", line_color=None, fill_alpha=0.5)
 
 def select():
 
@@ -142,10 +148,14 @@ def update():
         x=df[x_name],
         y=df[y_name],
         # color=df["color"],
+        State=df['st_name'],
         Township=df["name_ts"],
+        District=df['name_dt'],
         Number_of_HH_wo_Electricity=df["underserved_HH"],
-        Market_Size=df["underserved_mkt_size_USD"]
-    )
+        Market_Size_USD=df["underserved_mkt_size_USD"],
+        Market_Size_kW=df["underserved_mkt_size_kW"],
+        color = df['color'],
+        blob_size = df['blob_size'])
 
 # def update():
 #     df = select_movies()
