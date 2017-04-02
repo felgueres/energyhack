@@ -1,5 +1,5 @@
 from os.path import dirname, join
-
+import pandas as pd
 import numpy as np
 import pandas.io.sql as psql
 import sqlite3 as sql
@@ -94,15 +94,17 @@ hover = HoverTool(tooltips=[
 ])
 
 p = figure(plot_height=600, plot_width=700, title="", toolbar_location=None, tools=[hover])
-p.circle(x="x", y="y", source=source, size=7, color="color", line_color=None, fill_alpha="alpha")
+p.circle(x="x", y="y", source=source, size=7, line_color=None)
+
+# p.circle(x="x", y="y", source=source, size=7, color="color", line_color=None, fill_alpha="alpha")
 
 def select():
 
     selected = data.ix[
-                       (data.underserved_mkt_size_kW >= min_market_size_kW)
-                       (data.income_per_capita_yr >= min_income_per_capita)
-                       (data.underserved_mkt_size_USD >= min_population_density)
-                       (data.gov_revenue >= gov_revenue)
+                       (data.underserved_mkt_size_kW >= min_market_size_kW) &
+                       (data.income_per_capita_yr >= min_income_per_capita) &
+                       (data.underserved_mkt_size_USD >= min_market_size_USD) &
+                       (data.gov_revenue >= gov_revenue)&
                        (data.mobile_phone_per_HH >= access_to_comm)
                         ]
 
@@ -135,7 +137,7 @@ def update():
 
     p.xaxis.axis_label = x_axis.value
     p.yaxis.axis_label = y_axis.value
-    p.title.text = "%d movies selected" % len(df)
+    p.title.text = "%d Townships selected" % len(df)
     source.data = dict(
         x=df[x_name],
         y=df[y_name],
