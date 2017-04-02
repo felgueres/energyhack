@@ -14,10 +14,9 @@ class mdata (object):
         #Attributes to hold census and geospatial information.
         self.census = None
         self.census_keys = None
-        self.geospatial = None
         self.wb_plan = None
         self.names_dict = {}
-        self.main_cols = None
+        self.main_cols = None   #BAD NAME: THIS ARE COLS FROM FIRST IMPORTED FILE FROM CENSUS.
         self.created_features = []
         self.density = None
 
@@ -97,6 +96,18 @@ class mdata (object):
         '''
         self.density = pd.read_csv('../data/00_population/07_Area-and-Populatin-density-by-State-and-Region.csv')
 
+    def _import_gov_expenditure(self):
+        '''
+        Import Gov. Expenditure data
+        '''
+        self.gov_capex = pd.read_csv('../data/09_LabourForce/stateregionsexprev.csv')
+
+    def _import_monthlywages(self):
+        '''
+        Import monthly wages file
+        '''
+        self.monthly_wages = pd.read_csv('../data/09_LabourForce/monthlywages-ILOMyanmarSurvey2015.csv')
+
     def _featurize(self):
         '''
         Calls feature functions according to their needs.
@@ -118,6 +129,7 @@ class mdata (object):
         usd_per_kw = 60 USD -- This a 10 kW system size
         (60 USD / 10 W) * (1000W / kW) = 6,000 USD / kW
         '''
+        #TODO: FACTORIZE DRAMATICALLY.
 
         #Get Demand Columns.
         demand_cols = self.names_dict['08_source_of_light.csv'].tolist()
@@ -169,7 +181,7 @@ class mdata (object):
 
         access = self.census.loc[:,access_cols].rename(columns = self.renamer).copy()
 
-        #Access_by_car #TODO: Motorcycle
+        #Access_by_car
         new_col = 'car_access_per_HH'
         self.created_features.append(new_col)
         self.census[new_col] = access['Availability_of_transportation_items-Car_Truck_Van'].divide(access['Conventional_households-Number'])
@@ -179,15 +191,34 @@ class mdata (object):
         self.created_features.append(new_col)
         self.census[new_col] = access['Availability_of_communication_and_related_amenities-Mobile_phone'].divide(access['Conventional_households-Number'])
 
-        #Closest_Road #TODO: Import from calculated one.
 
+        ## THIS SNIPPET RUNS OKAY BUT NOT WORTH INCLUDING SINCE >90% DATA MISSING; TODO: CALCULATE ALTERNATIVE DISTANCE TO GRID
+        # #distance2grid:
+        # new_col = 'distance2grid'
+        # self.created_features.append(new_col)
+        # # distance2grid = self.wb_plan.groupby('Township_c').MV_distance_m.mean().to_frame().rename(columns = {'MV_distance_m': 'distance2grid_m'})
+        # distance2grid = self.wb_plan.groupby('Township_c').MV_distance_m.mean().to_frame().rename(columns = {'MV_distance_m': 'distance2grid_m'})
+        # # self.census[new_col] = self.census.merge(distance2grid, left_index = True, right_index = True, how = 'left')
+        # self.census = self.census.merge(distance2grid, left_index=True, right_index=True, how = 'left')
 
         #Density people per km2
         new_col = 'density_per_km2'
-        self.census.merge(self.density.set_index('Pcode').rename(columns = {'den_2014': new_col}), left_index=True, right_index=True, how = 'left')
+        self.created_features.append(new_col)
+        self.census = self.census.merge(self.density.set_index('Pcode').rename(columns = {'den_2014': new_col}), left_on = 'pcode_st', right_index=True, how = 'left')
 
-        #Estimated_Revenue_Per_Capita #TODO: Calculate
+        #Gov.Metrics
+        new_cols = ['gov_expenditure','gov_revenue']
+        self.created_features.extend(new_cols)
+        self.gov_capex.set_index('pcode_st', inplace = True)
+        self.gov_capex.rename(columns = {'exp_total': new_cols[0],'rev_total':new_cols[1]}, inplace = True)
+        self.census = self.census.merge(self.gov_capex, left_on ='pcode_st', right_index = True )
 
+        #Income
+        new_col = 'income_per_capita_yr'
+        self.created_features.append(new_col)
+        revenue_generating_workers = ['usuact_10ab_empyr_t', 'usuact_10ab_govemp_m','usuact_10ab_ownacc_t', 'usuact_10ab_priemp_t']
+        self.census['active_workers'] = self.census.loc[:, revenue_generating_workers].copy().sum(axis =1)
+        self.census[new_col] = self.census.active_workers * self.
 
     def _impact_features(self):
         '''
@@ -212,23 +243,29 @@ class mdata (object):
         '''
         Create solar features.
         '''
+        pass
 
     def _add_columns(self):
         '''
         Use this function to other relevant columns needed from the census df.
         '''
-        transport = ['trans_car'] #Transport by car
-        population = ['illit_15ab_t', 'pop_t'] #Literacy, Total Population
-        revenue_generating_workers = ['usuact_10ab_empyr_t', 'usuact_10ab_govemp_m','usuact_10ab_ownacc_t', 'usuact_10ab_priemp_t']
 
-    def fit(self):
+    def _importer(self):
         '''
-        Fit to datasets and fit features.
+        Helper to import all files.
         '''
-        self._build_census_file()
         self._import_WB_plan()
         self._import_keys()
         self._import_density()
+        self._import_gov_expenditure()
+        self._import_monthlywages()
+
+    def fit(self):
+        '''
+        Fit to datasets and fit features
+        '''
+        self._build_census_file()
+        self._importer()
         self._featurize()
 
 if __name__ == '__main__':
