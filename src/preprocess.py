@@ -45,6 +45,7 @@ class mdata (object):
             df_file = pd.read_csv(file)
 
             if reference in df_file.columns:
+
                 #set index as township code
                 df_file.set_index(reference, inplace = True)
                 #get new cols only
@@ -93,56 +94,101 @@ class mdata (object):
         '''
         Calls feature functions according to their needs.
         '''
-        self._demand()
+        self._demand_features()
+        self._access_features()
 
     '''
     ---------------------------------FEATURES------------------------------------
     '''
-    def _demand(self, demand_per_household = 0.01, ten_wat_cost = 60):
+    def _demand_features(self, demand_per_household = 0.01, system_cost = 6000):
         '''
         Calculate basic demand needs for each
 
         Inputs
         ------
         demand_per_household = 0.010 kW -- Demand Needs for couple LEDs and Charger
-        ten_wat_cost = 60 USD -- This a 10 kW system size
-        Market (kW) * (60 USD / 10 W) * (1000W / kW)
+        system_cost = 60 USD -- This a 10 kW system size
+        (60 USD / 10 W) * (1000W / kW) = 6,000 USD / kW
         '''
 
-        # Get Demand Columns.
-        demand_cols.extend(self.names_dict['08_source_of_light.csv'].tolist())
+        #Get Demand Columns.
+        demand_cols = self.names_dict['08_source_of_light.csv'].tolist()
+        demand_cols.extend(self.names_dict['04_male_female_headers.csv'].tolist())
+        demand_cols.extend(self.names_dict['03_mean_household_size.csv'].tolist())
 
-        # Index
-        self.demand = self.census.loc[:,demand_cols].rename(columns = self.renamer).copy()
+        #Index
+        demand = self.census.loc[:,demand_cols].rename(columns = self.renamer).copy()
 
-        # Basic Demand Needs Feature, 10 W per Number of Households
+        #Basic Demand Needs Feature, 10 W per Number of Households
         new_col = 'basic_needs_demand_kW'
         self.created_features.append(new_col)
-        self.census[new_col] = self.demand['Conventional_households-Number'] * demand_per_household
+        self.census[new_col] = demand['Conventional_households-Number'] * demand_per_household
 
-        # Create Served Demand Feature
+        #Create Served Demand Feature
         new_col = 'underserved_HH_Total'
         self.created_features.append(new_col)
-        self.census[new_col] = self.demand.loc[:,['Source_of_lighting-Candle', 'Source_of_lighting-Kerosene']]
+        self.census[new_col] = demand.loc[:,['Source_of_lighting-Candle', 'Source_of_lighting-Kerosene']].sum(axis =1)
 
-        # Create Demand Market Size kW
+        #Create Demand Market Size kW
         new_col = 'underserved_mkt_size_kW'
         self.created_features.append(new_col)
         self.census[new_col] = self.census['underserved_HH_Total'] * demand_per_household
 
-        # Create Demand Market Size USD
+        #Create Demand Market Size USD
         new_col = 'underserved_mkt_size_USD'
         self.created_features.append(new_col)
-        self.census[new_col] = self.census['underserved_mkt_size_kW'] *
+        self.census[new_col] = self.census['underserved_mkt_size_kW'] * system_cost
 
+        #Proportion
+        new_col = 'HH_Proportion_Underserved'
+        self.created_features.append(new_col)
+        self.census[new_col] = self.census['underserved_HH_Total'].divide(demand['Conventional_households-Number'])
 
+        #Population Underserved
+        new_col = 'underserved_population'
+        self.created_features.append(new_col)
+        self.census[new_col] = self.census['underserved_HH_Total'].multiply(demand['Mean_household_size'])
 
-    def _is_electrified(self):
+    def _access_features(self):
         '''
-        Percentage of Population Electrified
+        Calculate
+        '''
+        access_cols = self.names_dict['09_avail_transportation.csv'].tolist()
+        access_cols.extend(self.names_dict['04_male_female_headers.csv'].tolist())
+        access_cols.extend(self.names_dict['03_mean_household_size.csv'].tolist())
+        access_cols.extend(self.names_dict['06_population_by_gender_ratio.csv'].tolist())
+
+        access = self.census.loc[:,access_cols].rename(columns = self.renamer).copy()
+
+        #Access_by_car
+        new_col = 'car_access_per_HH'
+        self.created_features.append(new_col)
+        self.census[new_col] = access['Availability_of_transportation_items-Car_Truck_Van'].divide(access['Conventional_households-Number'])
+
+        #Coomunication
+        new_col = 'mobile_phone_per_HH'
+        self.created_features.append(new_col)
+        self.census[new_col] = access['Availability_of_transportation_items-Car_Truck_Van'].divide(access['Conventional_households-Number'])
+
+
+
+    def _feasibility_features(self):
+        '''
+        Create business feasibility features
         '''
 
+    def _add_columns(self):
+        '''
+        Use this function to other relevant columns needed from the census df.
+        '''
 
+        transport = ['trans_car'] #Transport by car
+
+        population = ['illit_15ab_t', 'pop_t'] #Literacy, Total Population
+
+        communication = ['com_mob'] #mobile communication
+
+        revenue_generating_workers = ['usuact_10ab_empyr_t', 'usuact_10ab_govemp_m','usuact_10ab_ownacc_t', 'usuact_10ab_priemp_t']
 
 
     def fit(self):
