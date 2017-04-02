@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import glob
 import os
 import geopandas as gpd
+import itertools
+from bokeh.palettes import Dark2_5 as palette
 
 class mdata (object):
     '''
@@ -192,7 +194,6 @@ class mdata (object):
         self.created_features.append(new_col)
         self.census[new_col] = access['Availability_of_communication_and_related_amenities-Mobile_phone'].divide(access['Conventional_households-Number'])
 
-
         ## THIS SNIPPET RUNS OKAY BUT NOT WORTH INCLUDING SINCE >90% DATA MISSING; TODO: CALCULATE ALTERNATIVE DISTANCE TO GRID
         # #distance2grid:
         # new_col = 'distance2grid'
@@ -269,6 +270,38 @@ class mdata (object):
         self.created_features.append(new_col)
         self.census = self.census.merge(self.town_location.set_index('Township')['Longitude'].to_frame(), left_on = 'name_ts', right_index=True, how = 'left').drop_duplicates('name_ts')
 
+    def _add_columns(self):
+        '''
+        Add final columns.
+        '''
+
+        new_cols = ['name_ts',
+                     'name_dt', 'st_name']
+
+        self.created_features.extend(new_cols)
+
+    def _create_colors(self):
+        '''
+        Create column for each state.
+        '''
+        # create a color iterator
+        colors = itertools.cycle(palette)
+
+        colors_dict = {}
+
+        for state, color in itertools.izip(states, colors):
+            colors_dict[state] = color
+
+        new_col = 'color'
+        self.created_features.append(new_col)
+        self.census[new_col] = self.census.st_name.apply(lambda x : colors_dict[x])
+
+    def _format_cols(self):
+        '''
+        Format cols.
+        '''
+        self.census.underserved_mkt_size_USD = self.census.underserved_mkt_size_USD/1000
+
     def fit(self):
         '''
         Fit to datasets and fit features
@@ -277,6 +310,8 @@ class mdata (object):
         self._importer()
         self._featurize()
         self._get_coordenates()
+        self._add_columns()
+        self._create_colors()
 
 if __name__ == '__main__':
 
