@@ -83,11 +83,10 @@ y_axis = Select(title="Y Axis", options=sorted(axis_map.keys()), value="Income p
 
 source = ColumnDataSource(data=dict(x=[],
                                     y=[],
-                                    color=[],
+                                    # color=[],
                                     Township=[],
                                     Number_of_HH_wo_Electricity=[],
-                                    Market_Size=[],
-                                    alpha=[]))
+                                    Market_Size=[]))
 hover = HoverTool(tooltips=[
     ("Title", "@Township"),
     ("# Unelectrified Households", "@Number_of_HH_wo_Electricity"),
@@ -129,6 +128,7 @@ def select():
 #     return selected
 
 def update():
+
     df = select()
     x_name = axis_map[x_axis.value]
     y_name = axis_map[y_axis.value]
@@ -139,32 +139,33 @@ def update():
     source.data = dict(
         x=df[x_name],
         y=df[y_name],
-        color=df["color"],
-        title=df["Title"],
-        year=df["Year"],
-        revenue=df["revenue"],
-        alpha=df["alpha"],
+        # color=df["color"],
+        Township=df["name_ts"],
+        Number_of_HH_wo_Electricity=df["underserved_HH"],
+        Market_Size=df["underserved_mkt_size_USD"]
     )
 
-def update():
-    df = select_movies()
-    x_name = axis_map[x_axis.value]
-    y_name = axis_map[y_axis.value]
+# def update():
+#     df = select_movies()
+#     x_name = axis_map[x_axis.value]
+#     y_name = axis_map[y_axis.value]
+#
+#     p.xaxis.axis_label = x_axis.value
+#     p.yaxis.axis_label = y_axis.value
+#     p.title.text = "%d movies selected" % len(df)
+#     source.data = dict(
+#         x=df[x_name],
+#         y=df[y_name],
+#         color=df["color"],
+#         title=df["Title"],
+#         year=df["Year"],
+#         revenue=df["revenue"],
+#         alpha=df["alpha"],
+#     )
 
-    p.xaxis.axis_label = x_axis.value
-    p.yaxis.axis_label = y_axis.value
-    p.title.text = "%d movies selected" % len(df)
-    source.data = dict(
-        x=df[x_name],
-        y=df[y_name],
-        color=df["color"],
-        title=df["Title"],
-        year=df["Year"],
-        revenue=df["revenue"],
-        alpha=df["alpha"],
-    )
+controls = [min_market_size_kW, min_market_size_USD, min_income_per_capita, gov_revenue, access_to_comm, x_axis, y_axis]
 
-controls = [reviews, boxoffice, genre, min_year, max_year, oscars, director, cast, x_axis, y_axis]
+# controls = [reviews, boxoffice, genre, min_year, max_year, oscars, director, cast, x_axis, y_axis]
 
 for control in controls:
     control.on_change('value', lambda attr, old, new: update())
