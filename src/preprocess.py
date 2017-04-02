@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import glob
 import os
+import geopandas as gpd
 
 class mdata (object):
     '''
@@ -255,6 +256,19 @@ class mdata (object):
         self._import_gov_expenditure()
         self._import_monthlywages()
 
+    def _get_coordenates(self):
+        '''
+        Get Coordinates from the wb dataframe.
+        '''
+        new_col = 'Latitude'
+        self.created_features.append(new_col)
+        self.town_location = gpd.read_file('../data/05_Geospatial/06_Town_Location_Points/mmrpplp1250kmimu.geojson')
+        self.census = self.census.merge(self.town_location.set_index('Township')['Latitude'].to_frame(), left_on = 'name_ts', right_index=True, how = 'left').drop_duplicates('name_ts')
+
+        new_col = 'Longitude'
+        self.created_features.append(new_col)
+        self.census = self.census.merge(self.town_location.set_index('Township')['Longitude'].to_frame(), left_on = 'name_ts', right_index=True, how = 'left').drop_duplicates('name_ts')
+
     def fit(self):
         '''
         Fit to datasets and fit features
@@ -262,6 +276,7 @@ class mdata (object):
         self._build_census_file()
         self._importer()
         self._featurize()
+        self._get_coordenates()
 
 if __name__ == '__main__':
 
