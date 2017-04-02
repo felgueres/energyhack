@@ -45,6 +45,8 @@ axis_map = {
     "Mobile Phones per Houshold": "mobile_phone_per_HH",
     "Population Density per km2": "density_per_km2",
     "Car Access per Household": "car_access_per_HH",
+    "People to Gain Access per Usd":"access_per_capita_per_usd",
+    "Government Revenue":"gov_revenue"
 }
 
 desc = Div(text=open(join(dirname(__file__), "description.html")).read(), width=800)
@@ -52,9 +54,10 @@ desc = Div(text=open(join(dirname(__file__), "description.html")).read(), width=
 # Create Input controls
 min_market_size_kW = Slider(title="Minimum market size (KW)", value=data.underserved_mkt_size_kW.mean(), start=0, end=450, step=10)
 min_income_per_capita = Slider(title="Minimum Income per Capita (K)", start=0, end=950, value=data.income_per_capita_yr.mean(), step=50)
-min_market_size_USD = Slider(title="Minimum Market size (USD)", start=0, end=2700000, value=data.underserved_mkt_size_USD.mean(), step=10000)
+min_market_size_USD = Slider(title="Minimum Market size (USD)", start=0, end=2700, value=data.underserved_mkt_size_USD.mean(), step=10)
 gov_revenue = Slider(title="Government Revenue (K)", start=0, end=175000, value=data.gov_revenue.mean(), step=10000)
 access_to_comm = Slider(title="Communication Access (Phones/Household)", start=0, end=1, value=data.mobile_phone_per_HH.mean(), step=0.01)
+Access_by_car = Slider(title="Communication Access (Cars/Household)", start = 0, end=0.36, value=data.car_access_per_HH.mean(), step=0.0001 )
 
 # reviews = Slider(title="Minimum number of reviews", value=80, start=10, end=300, step=10)
 # min_year = Slider(title="Year released", start=1940, end=2014, value=1970, step=1)
@@ -111,8 +114,8 @@ def select():
                        (data.underserved_mkt_size_USD >= min_market_size_USD.value)&
                        (data.income_per_capita_yr >= min_income_per_capita.value) &
                        (data.gov_revenue >= gov_revenue.value)&
-                       (data.mobile_phone_per_HH >= access_to_comm.value)
-                        ].copy()
+                       (data.mobile_phone_per_HH >= access_to_comm.value)&
+                       (data.car_access_per_HH >= Access_by_car.value)].copy()
 
     return selected
 
@@ -175,7 +178,7 @@ def update():
 #         alpha=df["alpha"],
 #     )
 
-controls = [min_market_size_kW, min_market_size_USD, min_income_per_capita, gov_revenue, access_to_comm, x_axis, y_axis]
+controls = [min_market_size_kW, min_market_size_USD, min_income_per_capita, gov_revenue, access_to_comm,Access_by_car, x_axis, y_axis]
 
 # controls = [reviews, boxoffice, genre, min_year, max_year, oscars, director, cast, x_axis, y_axis]
 
