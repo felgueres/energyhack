@@ -94,20 +94,21 @@ class mdata (object):
         '''
         Calls feature functions according to their needs.
         '''
-        self._demand_features()
+        self._market_features()
         self._access_features()
+        self._impact_features()
 
     '''
     ---------------------------------FEATURES------------------------------------
     '''
-    def _demand_features(self, demand_per_household = 0.01, system_cost = 6000):
+    def _market_features(self, demand_per_household = 0.01, usd_per_kw = 6000):
         '''
         Calculate basic demand needs for each
 
         Inputs
         ------
         demand_per_household = 0.010 kW -- Demand Needs for couple LEDs and Charger
-        system_cost = 60 USD -- This a 10 kW system size
+        usd_per_kw = 60 USD -- This a 10 kW system size
         (60 USD / 10 W) * (1000W / kW) = 6,000 USD / kW
         '''
 
@@ -137,10 +138,10 @@ class mdata (object):
         #Create Demand Market Size USD
         new_col = 'underserved_mkt_size_USD'
         self.created_features.append(new_col)
-        self.census[new_col] = self.census['underserved_mkt_size_kW'] * system_cost
+        self.census[new_col] = self.census['underserved_mkt_size_kW'] * usd_per_kw
 
         #Proportion
-        new_col = 'HH_Proportion_Underserved'
+        new_col = 'underserved_HH'
         self.created_features.append(new_col)
         self.census[new_col] = self.census['underserved_HH_Total'].divide(demand['Conventional_households-Number'])
 
@@ -157,37 +158,54 @@ class mdata (object):
         access_cols.extend(self.names_dict['04_male_female_headers.csv'].tolist())
         access_cols.extend(self.names_dict['03_mean_household_size.csv'].tolist())
         access_cols.extend(self.names_dict['06_population_by_gender_ratio.csv'].tolist())
+        access_cols.extend(self.main_cols)
 
         access = self.census.loc[:,access_cols].rename(columns = self.renamer).copy()
 
-        #Access_by_car
+        #Access_by_car #TODO: Motorcycle
         new_col = 'car_access_per_HH'
         self.created_features.append(new_col)
         self.census[new_col] = access['Availability_of_transportation_items-Car_Truck_Van'].divide(access['Conventional_households-Number'])
 
-        #Coomunication
+        #Comunication_Phone_Communication
         new_col = 'mobile_phone_per_HH'
         self.created_features.append(new_col)
-        self.census[new_col] = access['Availability_of_transportation_items-Car_Truck_Van'].divide(access['Conventional_households-Number'])
+        self.census[new_col] = access['Availability_of_communication_and_related_amenities-Mobile_phone'].divide(access['Conventional_households-Number'])
+
+        #Closest_Road #TODO: Import from calculated one.
 
 
+        #Density #TODO: See if calculated.
 
-    def _feasibility_features(self):
+
+        #Estimated_Revenue_Per_Capita
+
+
+    def _impact_features(self):
         '''
-        Create business feasibility features
+        Create social impact figures
         '''
+
+        system_cost = 60 # USD / kW
+
+        impact_cols = self.names_dict['03_mean_household_size.csv'].tolist()
+        impact_cols.extend(self.names_dict['04_male_female_headers.csv'].tolist())
+        impact_cols.extend(self.names_dict['06_population_by_gender_ratio.csv'].tolist())
+        impact_cols.extend(self.main_cols)
+
+        impact = self.census.loc[:,impact_cols].rename(columns = self.renamer).copy()
+
+        #Comunication_Phone_Communication
+        new_col = 'access_per_capita_per_usd'
+        self.created_features.append(new_col)
+        self.census[new_col] = float(system_cost) / impact['Mean_household_size']
 
     def _add_columns(self):
         '''
         Use this function to other relevant columns needed from the census df.
         '''
-
         transport = ['trans_car'] #Transport by car
-
         population = ['illit_15ab_t', 'pop_t'] #Literacy, Total Population
-
-        communication = ['com_mob'] #mobile communication
-
         revenue_generating_workers = ['usuact_10ab_empyr_t', 'usuact_10ab_govemp_m','usuact_10ab_ownacc_t', 'usuact_10ab_priemp_t']
 
 
