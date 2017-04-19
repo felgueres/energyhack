@@ -1,5 +1,4 @@
-# energytech
-State Department's Clean Energy Data Science Challenge
+# State Department's Clean Energy Data Science Challenge
 
 I completed and presented this project during the Clean Energy Data Science Challenge, an event hosted by the U.S. State Deparment, Booz Allen Hamilton and the World Bank at Galvanize, San Francisco.
 
